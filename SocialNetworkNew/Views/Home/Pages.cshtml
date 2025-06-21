@@ -1,0 +1,151 @@
+﻿@model IEnumerable<Microsoft.AspNetCore.Identity.IdentityUser>
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "Pages";
+    var currentUserId = ViewBag.CurrentUserId as string;
+    var friends = ViewBag.Friends as List<string>;
+    var following = ViewBag.Following as List<string>;
+    var incomingRequests = ViewBag.IncomingRequests as List<SocialNetwork.Domain.Entities.Friendship>;
+}
+
+<!-- main contents -->
+<main id="site__main" class="2xl:ml-[--w-side]  xl:ml-[--w-side-sm] p-2.5 h-[calc(100vh-var(--m-top))] mt-[--m-top]">
+
+    <div class="flex max-lg:flex-col 2xl:gap-12 gap-10 2xl:max-w-[1220px] max-w-[1065px] mx-auto" id="js-oversized">
+
+        <div class="flex-1">
+
+            <div class="max-w-[680px] w-full mx-auto">
+
+                <div class="page-heading">
+
+                    <h1 class="page-title"> Pages </h1>
+
+                    <nav class="nav__underline">
+                        <ul class="group" uk-switcher="connect: #page-tabs ; animation: uk-animation-slide-right-medium, uk-animation-slide-left-medium">
+                            <li> <a href="#"> Suggestions  </a> </li>
+                            <li> <a href="#"> Popular </a> </li>
+                            <li> <a href="#"> My pages </a> </li>
+                        </ul>
+                    </nav>
+                </div>
+
+                @if (incomingRequests != null && incomingRequests.Any())
+                {
+                    <div class="mb-8">
+                        <h2 class="text-xl font-bold mb-4">Входящие заявки в друзья</h2>
+                        <div class="grid sm:grid-cols-3 grid-cols-2 gap-3">
+                            @foreach (var req in incomingRequests)
+                            {
+                                var user = req.User;
+                                <div class="card">
+                                    <a asp-controller="Profile" asp-action="Index" asp-route-id="@user?.Id">
+                                        <div class="card-media sm:aspect-[2/1.7] h-40">
+                                            <img src="@Url.Content("~/images/avatars/avatar-3.jpg")" alt="">
+                                            <div class="card-overly"></div>
+                                        </div>
+                                    </a>
+                                    <div class="card-body">
+                                        <a asp-controller="Profile" asp-action="Index" asp-route-id="@user?.Id">
+                                            <h4 class="card-title">@user?.UserName ?? req.UserId</h4>
+                                        </a>
+                                        <p class="card-text">@user?.Email</p>
+                                        <form asp-controller="Profile" asp-action="AcceptFriend" method="post">
+                                            <input type="hidden" name="userId" value="@req.UserId" />
+                                            <button type="submit" class="button bg-primary text-white">Принять</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                                </div>
+                }
+
+                <!-- динамический блок пользователей -->
+                <div class="grid sm:grid-cols-3 grid-cols-2 gap-3 mt-8">
+                    @foreach (var user in Model)
+                    {
+                        if (user.Id == currentUserId) { continue; } // не показываем себя
+                        <div class="card">
+                            <a asp-controller="Profile" asp-action="Index" asp-route-id="@user.Id">
+                                <div class="card-media sm:aspect-[2/1.7] h-40">
+                                    <img src="@Url.Content("~/images/avatars/avatar-3.jpg")" alt="">
+                                    <div class="card-overly"></div>
+                                </div>
+                            </a>
+                            <div class="card-body">
+                                <a asp-controller="Profile" asp-action="Index" asp-route-id="@user.Id">
+                                    <h4 class="card-title">@user.UserName</h4>
+                                </a>
+                                <p class="card-text">@user.Email</p>
+                                @if (friends != null && friends.Contains(user.Id))
+                                {
+                                    <span class="button bg-success text-white">Друзья</span>
+                                }
+                                else if (following != null && following.Contains(user.Id))
+                                {
+                                    <span class="button bg-gray-400 text-white">Запрос отправлен</span>
+                                }
+                                else
+                                {
+                                    <button type="button" 
+                                            class="button bg-primary text-white follow-btn" 
+                                            data-user-id="@user.Id"
+                                            onclick="followUser('@user.Id', this)">
+                                        Подписаться
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+function followUser(userId, button) {
+    // Отключаем кнопку на время запроса
+    button.disabled = true;
+    button.textContent = 'Отправка...';
+    
+    // Отправляем AJAX-запрос
+    fetch('/Profile/Follow', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'friendId=' + encodeURIComponent(userId)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Успешно подписались
+            button.textContent = 'Запрос отправлен';
+            button.className = 'button bg-gray-400 text-white';
+            button.disabled = false;
+        } else {
+            // Ошибка
+            button.textContent = data.message || 'Ошибка';
+            button.className = 'button bg-red-500 text-white';
+            setTimeout(() => {
+                button.textContent = 'Подписаться';
+                button.className = 'button bg-primary text-white';
+                button.disabled = false;
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.textContent = 'Ошибка';
+        button.className = 'button bg-red-500 text-white';
+        setTimeout(() => {
+            button.textContent = 'Подписаться';
+            button.className = 'button bg-primary text-white';
+            button.disabled = false;
+        }, 2000);
+    });
+}
+</script>

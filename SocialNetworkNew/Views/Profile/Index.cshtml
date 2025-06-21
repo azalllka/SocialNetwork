@@ -1,0 +1,23 @@
+@using System.Security.Claims
+@model SocialNetwork.Models.Profile.ProfileViewModel
+
+<div class="profile-header">
+    <img src="@Model.Img" alt="Avatar" style="width:100px;height:100px;" />
+    <h2>@Model.Name (@Model.UserName)</h2>
+    <p>@Model.Bio</p>
+</div>
+
+@if (User.Identity.IsAuthenticated && User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier) != Model.UserId)
+{
+    if (!Model.IsFriend)
+    {
+        <form asp-action="Follow" method="post">
+            <input type="hidden" name="friendId" value="@Model.UserId" />
+            <button type="submit" class="btn btn-primary">Follow</button>
+        </form>
+    }
+    else
+    {
+        <span>Вы уже друзья</span>
+    }
+} 

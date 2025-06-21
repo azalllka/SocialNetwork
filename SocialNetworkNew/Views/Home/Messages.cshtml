@@ -1,0 +1,95 @@
+﻿@{
+    ViewData["Title"] = "Messages";
+    var friends = ViewBag.Friends as List<Microsoft.AspNetCore.Identity.IdentityUser>;
+    var chatUser = ViewBag.ChatUser as Microsoft.AspNetCore.Identity.IdentityUser;
+    var messages = ViewBag.Messages as List<SocialNetwork.Domain.Entities.Message>;
+    var currentUserId = ViewBag.CurrentUserId as string;
+}
+<main id="site__main" class="2xl:ml-[--w-side]  xl:ml-[--w-side-sm] p-2.5 h-[calc(100vh-var(--m-top))] mt-[--m-top]">
+    <div class="relative overflow-hidden border -m-2.5 dark:border-slate-700">
+        <div class="flex bg-white dark:bg-dark2">
+            <!-- sidebar -->
+            <div class="md:w-[360px] relative border-r dark:border-slate-700">
+                <div class="p-4 border-b dark:border-slate-700">
+                    <h2 class="text-2xl font-bold text-black ml-1 dark:text-white">Чаты</h2>
+                </div>
+                <div class="space-y-2 p-2 overflow-y-auto md:h-[calc(100vh-120px)] h-[calc(100vh-130px)]">
+                    @if (friends != null && friends.Any())
+                    {
+                        foreach (var friend in friends)
+                        {
+                            <a asp-action="Messages" asp-route-withUserId="@friend.Id" class="relative flex items-center gap-4 p-2 duration-200 rounded-xl hover:bg-secondery">
+                                <div class="relative w-14 h-14 shrink-0">
+                                    <img src="@Url.Content("~/images/avatars/avatar-3.jpg")" alt="" class="object-cover w-full h-full rounded-full">
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1.5">
+                                        <div class="mr-auto text-sm text-black dark:text-white font-medium">@friend.UserName</div>
+                                    </div>
+                                    <div class="font-medium overflow-hidden text-ellipsis text-sm whitespace-nowrap">@friend.Email</div>
+                                </div>
+                            </a>
+                        }
+                    }
+                    else
+                    {
+                        <div class="p-4 text-gray-500">Нет друзей для переписки.</div>
+                    }
+                </div>
+            </div>
+            <!-- message center -->
+            <div class="flex-1">
+                @if (chatUser != null)
+                {
+                    <div class="flex items-center gap-2 w-full px-6 py-3.5 z-10 border-b dark:border-slate-700">
+                        <div class="flex items-center sm:gap-4 gap-2">
+                            <img src="@Url.Content("~/images/avatars/avatar-3.jpg")" alt="" class="w-8 h-8 rounded-full shadow">
+                            <div class="text-base font-bold">@chatUser.UserName</div>
+                        </div>
+                    </div>
+                    <div class="w-full p-5 py-10 overflow-y-auto md:h-[calc(100vh-204px)] h-[calc(100vh-195px)]">
+                        <div class="text-sm font-medium space-y-6">
+                            @if (messages != null && messages.Any())
+                            {
+                                foreach (var msg in messages)
+                                {
+                                    if (msg.SenderId == currentUserId)
+                                    {
+                                        <div class="flex gap-2 flex-row-reverse items-end">
+                                            <img src="@Url.Content("~/images/avatars/avatar-3.jpg")" alt="" class="w-5 h-5 rounded-full shadow">
+                                            <div class="px-4 py-2 rounded-[20px] max-w-sm bg-gradient-to-tr from-sky-500 to-blue-500 text-white shadow">@msg.Text</div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="flex gap-3">
+                                            <img src="@Url.Content("~/images/avatars/avatar-3.jpg")" alt="" class="w-9 h-9 rounded-full shadow">
+                                            <div class="px-4 py-2 rounded-[20px] max-w-sm bg-secondery">@msg.Text</div>
+                                        </div>
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                <div class="py-10 text-center text-gray-400">Нет сообщений</div>
+                            }
+                        </div>
+                    </div>
+                    <form asp-action="SendMessage" method="post" class="flex items-center md:gap-4 gap-2 md:p-3 p-2 overflow-hidden">
+                        <input type="hidden" name="receiverId" value="@chatUser.Id" />
+                        <div class="relative flex-1">
+                            <textarea name="text" placeholder="Напишите сообщение..." rows="1" class="w-full resize-none bg-secondery rounded-full px-4 p-2"></textarea>
+                        </div>
+                        <button type="submit" class="text-white shrink-0 p-2 bg-primary rounded-full">
+                            <ion-icon class="text-xl flex" name="send-outline"></ion-icon>
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <div class="flex items-center justify-center h-full text-gray-400 text-xl">Выберите друга для переписки</div>
+                }
+            </div>
+        </div>
+    </div>
+</main>
